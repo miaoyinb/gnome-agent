@@ -121,15 +121,11 @@ class GnomeAgentAgent(PrometheusAgent):
                                           event_queue=event_queue,
                                           message="Reading in markdown to create csv",
                                           dict_of_csv=dict_of_tables)
-        if input_data['skill_id'] == 'plot_csv':
-            return await ...
+        if input_data['skill_id'] == 'plot_table':
+            return await plot_table(context=context,
+                                    event_queue=event_queue,
+                                    message="Reading in markdown to create csv")
         return {"status": "Error", "error": "unknown skill"}
-
-        # ------------------------------------------------------------------
-        # 4. Return a plain dict.  Keep keys consistent with the
-        #    "output_format" you described in agent_card.json.
-        # ------------------------------------------------------------------
-        return result
 
     def read_in_markdown(self, text_or_markdown=None):
         """
@@ -160,6 +156,7 @@ class GnomeAgentAgent(PrometheusAgent):
         # Find the instances where we start a markdown table
         separator_re = re.compile(r"^\|?\s*:?-+:?\s*(\|\s*:?-+:?\s*)*\|?$")
 
+<<<<<<< HEAD
         # Find the instance where Table is mentioned as the first word
         caption_re = re.compile(r"^\s*(Table\s+\d+\.?.*)$", re.IGNORECASE)
 
@@ -230,6 +227,18 @@ class GnomeAgentAgent(PrometheusAgent):
             results.append(table_id)
             tab_num+=1 
         return results
+=======
+    def plot_table(context, event_queue, message, text_path):
+        """
+        Get the artefact and plot it as another artefact.  This is a placeholder for your actual plotting logic.
+        """
+        path = await self.get_artifact_file_path(params["table_artifact_id"], context=context,artifacts=params.get("artifacts"))
+
+        table_id = await self.send_json_artifact(context, event_queue, payload, name="table",catalog_artifact=True)
+
+        ref = await self.send_deeplynx_artifact(context=context, event_queue=event_queue,file_path=png, name="plot.png", description="…",storage_config=ConnectionConfig.from_env(),mime_type="image/png")
+        return {"status": "success", "artifact_id": ref.artifact_id}
+>>>>>>> a1babc3 (add a placehodler function for plot table)
 
     # ----------------------------------------------------------------------
     # PATTERNS — uncomment and adapt as needed.
