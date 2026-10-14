@@ -23,6 +23,10 @@ serving, and registry registration for you.
 import logging
 from typing import Any
 
+import re
+import io
+import pandas as pd
+
 from prometheus_api import load_prompt  # noqa: F401 - used by the LLM pattern below
 from prometheus_api.agent import EventQueue, PrometheusAgent, RequestContext
 
@@ -95,7 +99,7 @@ class GnomeAgentAgent(PrometheusAgent):
         input_data = params.get("input_data")
         if not input_data:
             return {"status": "error", "error": "input_data is required"}
-
+        
         # ------------------------------------------------------------------
         # 2. Send optional progress updates so the UI stays responsive.
         #    The base class sends the initial "working" update automatically;
@@ -110,17 +114,37 @@ class GnomeAgentAgent(PrometheusAgent):
         # ------------------------------------------------------------------
         # 3. Do your actual work here.  Replace this with real logic.
         # ------------------------------------------------------------------
-        result = {
-            "status": "success",
-            "input_received": input_data,
-            "message": "Replace this with your agent's processing logic.",
-        }
+        if input_data['skill_id'] == 'markdown_to_csv':
+            return await markdown_to_csv(context=context,
+                                         event_queue=event_queue,
+                                         message="Reading in markdown to create csv")
+        if input_data['skill_id'] == 'plot_csv':
+            return await ...
+        return {"status": "Error", "error": "unknown skill"}
 
         # ------------------------------------------------------------------
         # 4. Return a plain dict.  Keep keys consistent with the
         #    "output_format" you described in agent_card.json.
         # ------------------------------------------------------------------
         return result
+
+    def markdown_to_csv(context, event_queue, message, text_path):
+        """
+        Find every markdown table in the text and pair each with its nearest "Table N." caption.
+
+        Args:
+            markdown_text: Full contents of the markdown file.
+
+        Returns:
+            A list of dicts, one per table, each shaped like:
+            {
+                "caption": str,   # e.g. "Table 1. Quarterly Revenue" (empty if none found)
+                "csv": str,       # table contents as CSV text
+            }
+        """
+
+
+        return results
 
     # ----------------------------------------------------------------------
     # PATTERNS — uncomment and adapt as needed.
