@@ -55,7 +55,9 @@ async def test_markdown_to_csv(context, event_queue):
         markdown_string = file.read()
 
     agent = _make_agent()
-    result = await agent.markdown_to_csv(context, event_queue)
+    result = agent.markdown_to_csv(markdown_string)
+
+    print(result)
 
     assert len(result) == 3
 

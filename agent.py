@@ -161,16 +161,8 @@ class GnomeAgentAgent(PrometheusAgent):
         # Find the instances where we start a markdown table
         separator_re = re.compile(r"^\|?\s*:?-+:?\s*(\|\s*:?-+:?\s*)*\|?$")
 
-<<<<<<< HEAD
-<<<<<<< HEAD
         # Find the instance where Table is mentioned as the first word
         caption_re = re.compile(r"^\s*(Table\s+\d+\.?.*)$", re.IGNORECASE)
-=======
-        results = ""
->>>>>>> cf84424 (add first test for markdown_to_csv)
-=======
-        results = ""
->>>>>>> cf84424edfbb3f701597da5048d5ccc9d6db3658
 
         # 1. Locate contiguous blocks of lines that form tables
         table_blocks = []  # list of (start_idx, end_idx_exclusive)
@@ -214,7 +206,7 @@ class GnomeAgentAgent(PrometheusAgent):
             dict_of_tables.update({'caption': caption, 'dataframe': df})
         return dict_of_tables
 
-    def send_to_deeplynx(self, context, event_queue, message, self, dict_of_tables):
+    def send_to_deeplynx(self, context, event_queue, message, dict_of_tables):
         """
         Take the dictionary of captions and csvs and send this to DeepLynx
         Args:
@@ -232,7 +224,7 @@ class GnomeAgentAgent(PrometheusAgent):
             rows = df.values.tolist()
 
             # Create a DeepLynx artifact which contains the 
-            table_id = await self.send_json_artifact(
+            table_id = self.send_json_artifact(
                 context, event_queue,
                 {"caption": caption, "columns": df.columns, "rows": rows},
                 name=f"table {tab_num}", catalog_artifact=True)
