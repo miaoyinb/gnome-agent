@@ -115,10 +115,8 @@ class GnomeAgentAgent(PrometheusAgent):
         # ------------------------------------------------------------------
         # 3. Do your actual work here.  Replace this with real logic.
         # ------------------------------------------------------------------
-        if input_data["skill_id"] == "markdown_to_csv":
-            markdown_text = await read_in_markdown(
-                text_or_markdown=params.get("text_path")
-            )
+        if input_data['skill_id'] == 'markdown_to_csv':
+            markdown_text = await read_in_markdown(path_or_markdown=params.get('path_or_markdown'))
             dict_of_tables = markdown_to_csv(markdown_text=markdown_text)
             return await send_to_deeplynx(
                 context=context,
@@ -151,7 +149,7 @@ class GnomeAgentAgent(PrometheusAgent):
         if os.path.isfile(path_or_markdown):
             with open(path_or_markdown, "r") as f:
                 return f.read()
-        return path_or_markdowntex
+        return path_or_markdown
 
     def markdown_to_csv(self, markdown_text):
         """
