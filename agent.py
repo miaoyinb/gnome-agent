@@ -223,7 +223,7 @@ class GnomeAgentAgent(PrometheusAgent):
             rows = df.values.tolist()
 
             # Create a DeepLynx artifact which contains the 
-            table_id = await self.send_json_artifact(
+            table_id = self.send_json_artifact(
                 context, event_queue,
                 {"caption": caption, "columns": df.columns, "rows": rows},
                 name=f"table {tab_num}", catalog_artifact=True)
