@@ -97,6 +97,7 @@ class GnomeAgentAgent(PrometheusAgent):
         #    declared in agent_card.json's inputSchema.
         # ------------------------------------------------------------------
         input_data = params.get("input_data")
+
         if not input_data:
             return {"status": "error", "error": "input_data is required"}
 
@@ -207,7 +208,7 @@ class GnomeAgentAgent(PrometheusAgent):
             dict_of_tables.update({"caption": caption, "dataframe": df})
         return dict_of_tables
 
-    def send_to_deeplynx(self, context, event_queue, message, self, dict_of_tables):
+    def send_to_deeplynx(self, context, event_queue, message, dict_of_tables):
         """
         Take the dictionary of captions and csvs and send this to DeepLynx
         Args:
