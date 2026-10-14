@@ -37,11 +37,17 @@
           "table_artifact_id": {
             "type": "string",
             "x_artifact_ref": "single",
-            "description": "Table artifact or CSV file." },
-            "x_column": { "type": "string",
-            "description": "x axis column (approximate ok)"
-            }
+            "description": "Table artifact or CSV file." 
           },
+          "x_column": { 
+            "type": "string",
+            "description": "x axis column (approximate ok)"
+          },
+          "y_column": { 
+            "type": "string",
+            "description": "y axis column (approximate ok)"
+          }
+        },
       "required": ["table_artifact_id"]
       }
     }

@@ -34,6 +34,7 @@ import matplotlib.pyplot as plt
 
 from prometheus_api import load_prompt  # noqa: F401 - used by the LLM pattern below
 from prometheus_api.agent import EventQueue, PrometheusAgent, RequestContext
+from prometheus_api.llm_client import LLMConfig
 
 # Read secrets and configuration from environment variables.
 # Never hard-code API keys or URLs here.
@@ -257,6 +258,24 @@ class GnomeAgentAgent(PrometheusAgent):
         #     context, event_queue, payload, name="table", catalog_artifact=True
         # )
 
+        # Placeholder: Use LLM to figure out which columns to plot
+        x_col_raw = params["x_column"]
+        if not x_col_raw:
+            return {"status": "error", "error": "x_column is required"}
+        y_col_raw = params["y_column"]
+        if not y_col_raw:
+            return {"status": "error", "error": "y_column is required"}
+        
+        cfg = LLMConfig.from_env()   # profile from .env
+        if cfg.proxy_url:            # only the platform proxy
+            cfg = cfg.with_api_key(os.getenv("LITELLM_MASTER_KEY"))
+
+        async with self.llm_client(context, config=cfg) as llm:
+            r = await llm.small(
+                f"Which caption matches '{desc}'? {captions}")
+        answer = r.text
+
+        # For now, just plot the first two columns
         png_name = plot_csv(path, 0, 1, "plot_table.png")
 
         ref = self.send_deeplynx_artifact(
