@@ -15,6 +15,7 @@
 Extend these as you implement your agent: every input-validation branch and
 every distinct result shape deserves a test. Run with `uv run pytest`.
 """
+import pandas as pd
 
 from agent import GnomeAgentAgent
 
@@ -65,3 +66,35 @@ async def test_markdown_to_csv(context, event_queue):
     assert result[0][0] == "Table 1. Registered population of the three gnome villages of Hollowmere Valley, as counted at the midsummer census each year from 2010 to 2024."
     assert result[1][0] == "Table 2. Monthly rainfall and wild mushroom harvest in the Whispering Wood for the year 2023, with the average market price fetched at the Mossbury Saturday market."
     assert result[2][0] == "Table 3. Vital statistics of the dragons resident in the Hollowmere caves, taken from the Spring 2024 Draconic Register, including each dragon's age, wingspan, measured top speed, and declared favourite snack."
+
+
+async def test_test1():
+    agent = _make_agent()
+
+    result = await agent.test1("Taeseung")
+    assert result == "Hello, Taeseung!"
+
+async def test_get_table_from_deeplynx(context):
+    agent = _make_agent()
+
+    test_artifact_id = "2784d45d-5cc8-4fe5-8de2-2f4c107fafa3"
+
+    df = await agent.get_table_from_deeplynx_for_testing(
+        artifact_id=test_artifact_id,
+        context=context,
+        artifacts=None
+    )
+
+    assert isinstance(df, pd.DataFrame), "Result should be a pandas DataFrame"
+    assert len(df) > 0, "DataFrame should not be empty"
+    assert len(df.columns) > 0, "DataFrame should have at least one column"
+
+    print(f"\n✅ Successfully fetched table from DeepLynx!")
+    print(f"   Artifact ID: {test_artifact_id}")
+    print(f"   Shape: {df.shape[0]} rows × {df.shape[1]} columns")
+    print(f"   Columns: {df.columns.tolist()}")
+    print(f"\n   First 5 rows:")
+    print(df.head())
+    print(f"\n   Data types:")
+    print(df.dtypes)
+    

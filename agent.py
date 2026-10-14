@@ -22,6 +22,7 @@ serving, and registry registration for you.
 
 import logging
 from typing import Any
+import pandas as pd
 
 import re
 import io
@@ -71,6 +72,29 @@ class GnomeAgentAgent(PrometheusAgent):
     #     from starlette.responses import JSONResponse
     #
     #     return JSONResponse({"artifact_id": request.path_params["artifact_id"]})
+
+    async def test1(
+        self,
+        name: str
+    ) -> str:
+        if not name:
+            return "Hello, stranger!"
+        return f"Hello, {name}!"
+
+    async def get_table_from_deeplynx_for_testing(
+        self,
+        artifact_id: str,
+        context: RequestContext,
+        artifacts: dict[str, Any] | None = None
+    ) -> pd.DataFrame:
+
+        file_path = await self.get_artifact_file_path(
+            artifact_id,
+            context=context,
+            artifacts=artifacts
+        )
+        df = pd.read_csv(file_path)
+        return df
 
     async def _execute(
         self,
