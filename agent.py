@@ -208,21 +208,21 @@ class GnomeAgentAgent(PrometheusAgent):
             list_of_tuples.append((caption,  df))
         return list_of_tuples
 
-    def send_to_deeplynx(self, context, event_queue, message, dict_of_tables):
+    def send_to_deeplynx(self, context, event_queue, message, list_of_tuples):
         """
         Take the dictionary of captions and csvs and send this to DeepLynx
         Args:
-            dict_of csv (dict): which takes the form
-            {
+            list_of_tuples (list): which takes the form
+            (
                 caption (str)                : string containing the table captions
                 dataframe (pandas.DataFrame) : pandas data frame containing the table associated with the caption
-            }
+            )
         Returns:
             results (list) : list of table_id's created in deeplynx for each caption-df pair
         """
         tab_num = 0
         results = []
-        for caption, df in dict_of_tables.items():
+        for caption, df in list_of_tuples:
             rows = df.values.tolist()
 
             # Create a DeepLynx artifact which contains the 
