@@ -162,11 +162,15 @@ class GnomeAgentAgent(PrometheusAgent):
         separator_re = re.compile(r"^\|?\s*:?-+:?\s*(\|\s*:?-+:?\s*)*\|?$")
 
 <<<<<<< HEAD
+<<<<<<< HEAD
         # Find the instance where Table is mentioned as the first word
         caption_re = re.compile(r"^\s*(Table\s+\d+\.?.*)$", re.IGNORECASE)
 =======
         results = ""
 >>>>>>> cf84424 (add first test for markdown_to_csv)
+=======
+        results = ""
+>>>>>>> cf84424edfbb3f701597da5048d5ccc9d6db3658
 
         # 1. Locate contiguous blocks of lines that form tables
         table_blocks = []  # list of (start_idx, end_idx_exclusive)
