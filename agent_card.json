@@ -14,7 +14,7 @@
       "usage_notes": "This should pull in a markdown file path and will read through the file looking for tables to convert to separate csv files with the caption as the meta data.",
       "requires_approval": false,
       "expected_duration_seconds": 30,
-      "output_format": "JSON with keys: status, input_received, csv_list, caption_list",
+      "output_format": "JSON with keys: status, input_received, id_list",
       "inputSchema": {
         "type": "object",
         "properties": {

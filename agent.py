@@ -115,9 +115,12 @@ class GnomeAgentAgent(PrometheusAgent):
         # 3. Do your actual work here.  Replace this with real logic.
         # ------------------------------------------------------------------
         if input_data['skill_id'] == 'markdown_to_csv':
-            return await markdown_to_csv(context=context,
-                                         event_queue=event_queue,
-                                         message="Reading in markdown to create csv")
+            markdown_text = await read_in_markdown(text_or_markdown=params.get('text_path'))
+            dict_of_tables = markdown_to_csv(markdown_text=markdown_text)
+            return await send_to_deeplynx(context=context,
+                                          event_queue=event_queue,
+                                          message="Reading in markdown to create csv",
+                                          dict_of_csv=dict_of_tables)
         if input_data['skill_id'] == 'plot_csv':
             return await ...
         return {"status": "Error", "error": "unknown skill"}
@@ -128,22 +131,104 @@ class GnomeAgentAgent(PrometheusAgent):
         # ------------------------------------------------------------------
         return result
 
-    def markdown_to_csv(context, event_queue, message, text_path):
+    def read_in_markdown(self, text_or_markdown=None):
+        """
+        Read in the markdown file
+
+        Args: 
+            text_or_markdown (str) : string containing either the path to the markdown file or the markdown file itself
+
+        Returns:
+            markdown_text (str) : Return either the read in version of the path or the markdown file presented
+        """
+        if os.path.isfile(text_or_markdown):
+            with open(text_or_markdown, "r") as f:
+                return f.read()
+        return text_or_markdown
+
+    def markdown_to_csv(self, markdown_text):
         """
         Find every markdown table in the text and pair each with its nearest "Table N." caption.
 
         Args:
-            markdown_text: Full contents of the markdown file.
+            markdown_text (str) : markdown text as a
 
         Returns:
-            A list of dicts, one per table, each shaped like:
-            {
-                "caption": str,   # e.g. "Table 1. Quarterly Revenue" (empty if none found)
-                "csv": str,       # table contents as CSV text
-            }
+            a list of deeplynx ids (str), one per table
         """
+        lines = markdown_text.splitlines()
+        # Find the instances where we start a markdown table
+        separator_re = re.compile(r"^\|?\s*:?-+:?\s*(\|\s*:?-+:?\s*)*\|?$")
 
+        # Find the instance where Table is mentioned as the first word
+        caption_re = re.compile(r"^\s*(Table\s+\d+\.?.*)$", re.IGNORECASE)
 
+        # 1. Locate contiguous blocks of lines that form tables
+        table_blocks = []  # list of (start_idx, end_idx_exclusive)
+        i = 0
+        while i < len(lines):
+            if lines[i].strip().startswith("|"):
+                start = i
+                while i < len(lines) and lines[i].strip().startswith("|"):
+                    i += 1
+                table_blocks.append((start, i))
+            else:
+                i += 1
+
+        # 2. For each table block, find caption + parse into a DataFrame
+        dict_of_tables = {}
+        tab_num = 1
+        for start, end in table_blocks:
+            # Caption = nearest line above the table starting with "Table N."
+            caption = ""
+            for j in range(start - 1, -1, -1):
+                line = lines[j].strip()
+                if line.startswith("|"):
+                    break  # hit another table before finding a caption
+                match = caption_re.match(line)
+                if match:
+                    caption = match.group(1).strip()
+                    break
+
+            # Drop the markdown separator row (e.g. |---|---|), then strip leading/trailing pipes
+            table_lines = [
+                line.strip().strip("|")
+                for line in lines[start:end]
+                if not separator_re.match(line.strip())
+            ]
+            if not table_lines:
+                continue
+
+            table_text = "\n".join(table_lines)
+            df = pd.read_table(io.StringIO(table_text), sep=r"\s*\|\s*", engine="python")
+            df.columns = [c.strip() for c in df.columns]
+            dict_of_tables.update({'caption': caption, 'dataframe': df})
+        return dict_of_tables
+
+    def send_to_deeplynx(self, context, event_queue, message, self, dict_of_tables):
+        """
+        Take the dictionary of captions and csvs and send this to DeepLynx
+        Args:
+            dict_of csv (dict): which takes the form
+            {
+                caption (str)                : string containing the table captions
+                dataframe (pandas.DataFrame) : pandas data frame containing the table associated with the caption
+            }
+        Returns:
+            results (list) : list of table_id's created in deeplynx for each caption-df pair
+        """
+        tab_num = 0
+        results = []
+        for caption, df in dict_of_tables.items():
+            rows = df.values.tolist()
+
+            # Create a DeepLynx artifact which contains the 
+            table_id = await self.send_json_artifact(
+                context, event_queue,
+                {"caption": caption, "columns": df.columns, "rows": rows},
+                name=f"table {tab_num}", catalog_artifact=True)
+            results.append(table_id)
+            tab_num+=1 
         return results
 
     # ----------------------------------------------------------------------
