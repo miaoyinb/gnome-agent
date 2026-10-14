@@ -124,7 +124,7 @@ class GnomeAgentAgent(PrometheusAgent):
         if input_data['skill_id'] == 'plot_table':
             return await plot_table(context=context,
                                     event_queue=event_queue,
-                                    message="Reading in markdown to create csv")
+                                    message="Plotting a table")
         return {"status": "Error", "error": "unknown skill"}
 
     def read_in_markdown(self, text_or_markdown=None):
