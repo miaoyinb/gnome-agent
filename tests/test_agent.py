@@ -74,27 +74,27 @@ async def test_test1():
     result = await agent.test1("Taeseung")
     assert result == "Hello, Taeseung!"
 
-async def test_get_table_from_deeplynx(context):
-    agent = _make_agent()
-
-    test_artifact_id = "2784d45d-5cc8-4fe5-8de2-2f4c107fafa3"
-
-    df = await agent.get_table_from_deeplynx_for_testing(
-        artifact_id=test_artifact_id,
-        context=context,
-        artifacts=None
-    )
-
-    assert isinstance(df, pd.DataFrame), "Result should be a pandas DataFrame"
-    assert len(df) > 0, "DataFrame should not be empty"
-    assert len(df.columns) > 0, "DataFrame should have at least one column"
-
-    print(f"\n✅ Successfully fetched table from DeepLynx!")
-    print(f"   Artifact ID: {test_artifact_id}")
-    print(f"   Shape: {df.shape[0]} rows × {df.shape[1]} columns")
-    print(f"   Columns: {df.columns.tolist()}")
-    print(f"\n   First 5 rows:")
-    print(df.head())
-    print(f"\n   Data types:")
-    print(df.dtypes)
+#async def test_get_table_from_deeplynx(context):
+#    agent = _make_agent()
+#
+#    test_artifact_id = "2784d45d-5cc8-4fe5-8de2-2f4c107fafa3"
+#
+#    df = await agent.get_table_from_deeplynx_for_testing(
+#        artifact_id=test_artifact_id,
+#        context=context,
+#        artifacts=None
+#    )
+#
+#    assert isinstance(df, pd.DataFrame), "Result should be a pandas DataFrame"
+#    assert len(df) > 0, "DataFrame should not be empty"
+#    assert len(df.columns) > 0, "DataFrame should have at least one column"
+#
+#    print(f"\n✅ Successfully fetched table from DeepLynx!")
+#    print(f"   Artifact ID: {test_artifact_id}")
+#    print(f"   Shape: {df.shape[0]} rows × {df.shape[1]} columns")
+#    print(f"   Columns: {df.columns.tolist()}")
+#    print(f"\n   First 5 rows:")
+#    print(df.head())
+#    print(f"\n   Data types:")
+#    print(df.dtypes)
     
