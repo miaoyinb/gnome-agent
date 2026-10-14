@@ -115,37 +115,37 @@ class GnomeAgentAgent(PrometheusAgent):
         # ------------------------------------------------------------------
         # 3. Do your actual work here.  Replace this with real logic.
         # ------------------------------------------------------------------
-        if input_data["skill_id"] == "markdown_to_csv":
-            markdown_text = await read_in_markdown(
-                text_or_markdown=params.get("text_path")
-            )
-            dict_of_tables = markdown_to_csv(markdown_text=markdown_text)
-            return await send_to_deeplynx(
-                context=context,
-                event_queue=event_queue,
-                message="Reading in markdown to create csv",
-                dict_of_csv=dict_of_tables,
-            )
-        if input_data["skill_id"] == "plot_table":
-            return await plot_table(
-                context=context, event_queue=event_queue, message="Plotting a table"
-            )
+        if input_data['skill_id'] == 'markdown_to_csv':
+            markdown_text = await read_in_markdown(path_or_markdown=params.get('path_or_markdown'))
+            list_of_tuples = markdown_to_csv(markdown_text=markdown_text)
+            return await send_to_deeplynx(context=context,
+                                          event_queue=event_queue,
+                                          message="Reading in markdown to create csv",
+                                          dict_of_csv=list_of_tuples)
+        if input_data['skill_id'] == 'plot_csv':
+            return await ...
         return {"status": "Error", "error": "unknown skill"}
 
-    def read_in_markdown(self, text_or_markdown=None):
+        # ------------------------------------------------------------------
+        # 4. Return a plain dict.  Keep keys consistent with the
+        #    "output_format" you described in agent_card.json.
+        # ------------------------------------------------------------------
+        return result
+
+    def read_in_markdown(self, path_or_markdown=None):
         """
         Read in the markdown file
 
-        Args:
-            text_or_markdown (str) : string containing either the path to the markdown file or the markdown file itself
+        Args: 
+            path_or_markdown (str) : string containing either the path to the markdown file or the markdown file itself
 
         Returns:
             markdown_text (str) : Return either the read in version of the path or the markdown file presented
         """
-        if os.path.isfile(text_or_markdown):
-            with open(text_or_markdown, "r") as f:
+        if os.path.isfile(path_or_markdown):
+            with open(path_or_markdown, "r") as f:
                 return f.read()
-        return text_or_markdown
+        return path_or_markdown
 
     def markdown_to_csv(self, markdown_text):
         """
@@ -155,7 +155,7 @@ class GnomeAgentAgent(PrometheusAgent):
             markdown_text (str) : markdown text as a
 
         Returns:
-            a list of deeplynx ids (str), one per table
+            list_of_tuples (list) : a list of tuples; each tuple has a caption (str) and dataframe (df)
         """
         lines = markdown_text.splitlines()
         # Find the instances where we start a markdown table
@@ -177,7 +177,7 @@ class GnomeAgentAgent(PrometheusAgent):
                 i += 1
 
         # 2. For each table block, find caption + parse into a DataFrame
-        dict_of_tables = {}
+        list_of_tuples = []
         tab_num = 1
         for start, end in table_blocks:
             # Caption = nearest line above the table starting with "Table N."
@@ -205,24 +205,24 @@ class GnomeAgentAgent(PrometheusAgent):
                 io.StringIO(table_text), sep=r"\s*\|\s*", engine="python"
             )
             df.columns = [c.strip() for c in df.columns]
-            dict_of_tables.update({"caption": caption, "dataframe": df})
-        return dict_of_tables
+            list_of_tuples.append((caption,  df))
+        return list_of_tuples
 
-    def send_to_deeplynx(self, context, event_queue, message, dict_of_tables):
+    def send_to_deeplynx(self, context, event_queue, message, list_of_tuples):
         """
         Take the dictionary of captions and csvs and send this to DeepLynx
         Args:
-            dict_of csv (dict): which takes the form
-            {
+            list_of_tuples (list): which takes the form
+            (
                 caption (str)                : string containing the table captions
                 dataframe (pandas.DataFrame) : pandas data frame containing the table associated with the caption
-            }
+            )
         Returns:
             results (list) : list of table_id's created in deeplynx for each caption-df pair
         """
         tab_num = 0
         results = []
-        for caption, df in dict_of_tables.items():
+        for caption, df in list_of_tuples:
             rows = df.values.tolist()
 
             # Create a DeepLynx artifact which contains the
