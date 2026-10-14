@@ -116,11 +116,11 @@ class GnomeAgentAgent(PrometheusAgent):
         # ------------------------------------------------------------------
         if input_data['skill_id'] == 'markdown_to_csv':
             markdown_text = await read_in_markdown(path_or_markdown=params.get('path_or_markdown'))
-            dict_of_tables = markdown_to_csv(markdown_text=markdown_text)
+            list_of_tuples = markdown_to_csv(markdown_text=markdown_text)
             return await send_to_deeplynx(context=context,
                                           event_queue=event_queue,
                                           message="Reading in markdown to create csv",
-                                          dict_of_csv=dict_of_tables)
+                                          dict_of_csv=list_of_tuples)
         if input_data['skill_id'] == 'plot_csv':
             return await ...
         return {"status": "Error", "error": "unknown skill"}
@@ -154,7 +154,7 @@ class GnomeAgentAgent(PrometheusAgent):
             markdown_text (str) : markdown text as a
 
         Returns:
-            a list of deeplynx ids (str), one per table
+            list_of_tuples (list) : a list of tuples; each tuple has a caption (str) and dataframe (df)
         """
         lines = markdown_text.splitlines()
         # Find the instances where we start a markdown table
@@ -176,7 +176,7 @@ class GnomeAgentAgent(PrometheusAgent):
                 i += 1
 
         # 2. For each table block, find caption + parse into a DataFrame
-        dict_of_tables = {}
+        list_of_tuples = []
         tab_num = 1
         for start, end in table_blocks:
             # Caption = nearest line above the table starting with "Table N."
@@ -202,10 +202,10 @@ class GnomeAgentAgent(PrometheusAgent):
             table_text = "\n".join(table_lines)
             df = pd.read_table(io.StringIO(table_text), sep=r"\s*\|\s*", engine="python")
             df.columns = [c.strip() for c in df.columns]
-            dict_of_tables.update({'caption': caption, 'dataframe': df})
-        return dict_of_tables
+            list_of_tuples.append((caption,  df))
+        return list_of_tuples
 
-    def send_to_deeplynx(self, context, event_queue, message, self, dict_of_tables):
+    def send_to_deeplynx(self, context, event_queue, message, dict_of_tables):
         """
         Take the dictionary of captions and csvs and send this to DeepLynx
         Args:
