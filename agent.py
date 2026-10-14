@@ -28,6 +28,7 @@ import re
 import io
 import pandas as pd
 import matplotlib
+import csv
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -266,17 +267,17 @@ class GnomeAgentAgent(PrometheusAgent):
         if not y_col_raw:
             return {"status": "error", "error": "y_column is required"}
         
-        cfg = LLMConfig.from_env()   # profile from .env
-        if cfg.proxy_url:            # only the platform proxy
-            cfg = cfg.with_api_key(os.getenv("LITELLM_MASTER_KEY"))
+        # cfg = LLMConfig.from_env()   # profile from .env
+        # if cfg.proxy_url:            # only the platform proxy
+        #     cfg = cfg.with_api_key(os.getenv("LITELLM_MASTER_KEY"))
 
-        async with self.llm_client(context, config=cfg) as llm:
-            r = await llm.small(
-                f"Which caption matches '{desc}'? {captions}")
-        answer = r.text
+        # async with self.llm_client(context, config=cfg) as llm:
+        #     r = await llm.small(
+        #         f"Which caption matches '{desc}'? {captions}")
+        # answer = r.text
 
         # For now, just plot the first two columns
-        png_name = plot_csv(path, 0, 1, "plot_table.png")
+        png_name = plot_csv_xy(self, path, 0, 1, "plot_table.png")
 
         ref = self.send_deeplynx_artifact(
             context=context,
@@ -289,7 +290,7 @@ class GnomeAgentAgent(PrometheusAgent):
         )
         return {"status": "success", "artifact_id": ref.artifact_id}
 
-    def plot_csv(csv_file, x_col=0, y_col=1, png_file="plot_table.png"):
+    def plot_csv_xy(self,file_path, x_col=0, y_col=1, png_file="plot_table.png"):
         """
         Plot two columns of a CSV file and save the chart as a PNG.
         csv_file : path to the CSV file (first row must be a header)
@@ -302,7 +303,7 @@ class GnomeAgentAgent(PrometheusAgent):
         x, y = [], []
 
         # Read the CSV ("utf-8-sig" strips the BOM that Excel sometimes adds)
-        with open(csv_file, newline="", encoding="utf-8-sig") as f:
+        with open(file_path, newline="", encoding="utf-8-sig") as f:
             reader = csv.reader(f)
             header = [h.strip() for h in next(reader)]
 
