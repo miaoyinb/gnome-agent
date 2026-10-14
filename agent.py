@@ -115,11 +115,12 @@ class GnomeAgentAgent(PrometheusAgent):
         # 3. Do your actual work here.  Replace this with real logic.
         # ------------------------------------------------------------------
         if input_data['skill_id'] == 'markdown_to_csv':
-            markdown_text = await read_in_markdown(params.get('text_path'))
-            return await markdown_to_csv(context=context,
-                                         event_queue=event_queue,
-                                         message="Reading in markdown to create csv",
-                                         markdown_text=markdown_text)
+            markdown_text = await read_in_markdown(text_or_markdown=params.get('text_path'))
+            dict_of_tables = markdown_to_csv(markdown_text=markdown_text)
+            return await send_to_deeplynx(context=context,
+                                          event_queue=event_queue,
+                                          message="Reading in markdown to create csv",
+                                          dict_of_csv=dict_of_tables)
         if input_data['skill_id'] == 'plot_csv':
             return await ...
         return {"status": "Error", "error": "unknown skill"}
@@ -130,7 +131,7 @@ class GnomeAgentAgent(PrometheusAgent):
         # ------------------------------------------------------------------
         return result
 
-    def read_in_markdown(text_or_markdown=None):
+    def read_in_markdown(self, text_or_markdown=None):
         """
         Read in the markdown file
 
@@ -145,7 +146,7 @@ class GnomeAgentAgent(PrometheusAgent):
                 return f.read()
         return text_or_markdown
 
-    def markdown_to_csv(context, event_queue, message, markdown_text):
+    def markdown_to_csv(self, markdown_text):
         """
         Find every markdown table in the text and pair each with its nearest "Table N." caption.
 
@@ -175,7 +176,7 @@ class GnomeAgentAgent(PrometheusAgent):
                 i += 1
 
         # 2. For each table block, find caption + parse into a DataFrame
-        results = []
+        dict_of_tables = {}
         tab_num = 1
         for start, end in table_blocks:
             # Caption = nearest line above the table starting with "Table N."
@@ -201,8 +202,25 @@ class GnomeAgentAgent(PrometheusAgent):
             table_text = "\n".join(table_lines)
             df = pd.read_table(io.StringIO(table_text), sep=r"\s*\|\s*", engine="python")
             df.columns = [c.strip() for c in df.columns]
-            rows = df.values.tolist()
+            dict_of_tables.update({'caption': caption, 'dataframe': df})
+        return dict_of_tables
 
+    def send_to_deeplynx(self, context, event_queue, message, self, dict_of_tables):
+        """
+        Take the dictionary of captions and csvs and send this to DeepLynx
+        Args:
+            dict_of csv (dict): which takes the form
+            {
+                caption (str)                : string containing the table captions
+                dataframe (pandas.DataFrame) : pandas data frame containing the table associated with the caption
+            }
+        Returns:
+            results (list) : list of table_id's created in deeplynx for each caption-df pair
+        """
+        tab_num = 0
+        results = []
+        for caption, df in dict_of_tables.items():
+            rows = df.values.tolist()
 
             # Create a DeepLynx artifact which contains the 
             table_id = await self.send_json_artifact(
@@ -211,9 +229,7 @@ class GnomeAgentAgent(PrometheusAgent):
                 name=f"table {tab_num}", catalog_artifact=True)
             results.append(table_id)
             tab_num+=1 
-
         return results
-
 
     # ----------------------------------------------------------------------
     # PATTERNS — uncomment and adapt as needed.
