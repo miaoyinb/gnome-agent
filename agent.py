@@ -27,6 +27,10 @@ import pandas as pd
 import re
 import io
 import pandas as pd
+import matplotlib
+
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
 
 from prometheus_api import load_prompt  # noqa: F401 - used by the LLM pattern below
 from prometheus_api.agent import EventQueue, PrometheusAgent, RequestContext
@@ -253,16 +257,60 @@ class GnomeAgentAgent(PrometheusAgent):
             context, event_queue, payload, name="table", catalog_artifact=True
         )
 
+        plot_csv(path, 0, 1, "plot_table.png")
+
         ref = self.send_deeplynx_artifact(
             context=context,
             event_queue=event_queue,
             file_path=png,
-            name="plot.png",
+            name="plot_table.png",
             description="…",
             storage_config=ConnectionConfig.from_env(),
             mime_type="image/png",
         )
         return {"status": "success", "artifact_id": ref.artifact_id}
+
+    def plot_csv(csv_file, x_col=0, y_col=1, png_file="plot_table.png"):
+        """
+        Plot two columns of a CSV file and save the chart as a PNG.
+        csv_file : path to the CSV file (first row must be a header)
+        x_col    : x column, as a header name (str) or zero-based index (int)
+        y_col    : y column, as a header name (str) or zero-based index (int)
+        png_file : output PNG file name
+        Returns  : the PNG file name
+        """
+
+        x, y = [], []
+
+        # Read the CSV ("utf-8-sig" strips the BOM that Excel sometimes adds)
+        with open(csv_file, newline="", encoding="utf-8-sig") as f:
+            reader = csv.reader(f)
+            header = [h.strip() for h in next(reader)]
+
+            # Convert column names to indices; integers are used as-is
+            xi = header.index(x_col) if isinstance(x_col, str) else x_col
+            yi = header.index(y_col) if isinstance(y_col, str) else y_col
+
+            # Collect numeric values, skipping blank or invalid rows
+            for row in reader:
+                try:
+                    x.append(float(row[xi]))
+                    y.append(float(row[yi]))
+                except (ValueError, IndexError):
+                    continue
+
+        # Plot the data and label the axes with the column headers
+        plt.plot(x, y)
+        plt.xlabel(header[xi])
+        plt.ylabel(header[yi])
+        plt.title(f"{header[yi]} vs {header[xi]}")
+        plt.grid(True)
+
+        # Save to PNG, then close the figure to free memory
+        plt.savefig(png_file, dpi=150, bbox_inches="tight")
+        plt.close()
+
+        return png_file
 
     # ----------------------------------------------------------------------
     # PATTERNS — uncomment and adapt as needed.
