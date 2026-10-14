@@ -59,6 +59,9 @@ async def test_markdown_to_csv(context, event_queue):
 
     print(result)
 
+    # Check that the number of tables is correct
     assert len(result) == 3
 
-    
+    assert result[0][0] == "Table 1. Registered population of the three gnome villages of Hollowmere Valley, as counted at the midsummer census each year from 2010 to 2024."
+    assert result[1][0] == "Table 2. Monthly rainfall and wild mushroom harvest in the Whispering Wood for the year 2023, with the average market price fetched at the Mossbury Saturday market."
+    assert result[2][0] == "Table 3. Vital statistics of the dragons resident in the Hollowmere caves, taken from the Spring 2024 Draconic Register, including each dragon's age, wingspan, measured top speed, and declared favourite snack."
