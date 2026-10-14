@@ -22,6 +22,7 @@ serving, and registry registration for you.
 
 import logging
 from typing import Any
+import pandas as pd
 
 import re
 import io
@@ -71,6 +72,7 @@ class GnomeAgentAgent(PrometheusAgent):
     #     from starlette.responses import JSONResponse
     #
     #     return JSONResponse({"artifact_id": request.path_params["artifact_id"]})
+
 
     async def _execute(
         self,
