@@ -97,6 +97,7 @@ class GnomeAgentAgent(PrometheusAgent):
         #    declared in agent_card.json's inputSchema.
         # ------------------------------------------------------------------
         input_data = params.get("input_data")
+
         if not input_data:
             return {"status": "error", "error": "input_data is required"}
         
@@ -160,8 +161,12 @@ class GnomeAgentAgent(PrometheusAgent):
         # Find the instances where we start a markdown table
         separator_re = re.compile(r"^\|?\s*:?-+:?\s*(\|\s*:?-+:?\s*)*\|?$")
 
+<<<<<<< HEAD
         # Find the instance where Table is mentioned as the first word
         caption_re = re.compile(r"^\s*(Table\s+\d+\.?.*)$", re.IGNORECASE)
+=======
+        results = ""
+>>>>>>> cf84424 (add first test for markdown_to_csv)
 
         # 1. Locate contiguous blocks of lines that form tables
         table_blocks = []  # list of (start_idx, end_idx_exclusive)
