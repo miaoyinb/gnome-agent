@@ -115,7 +115,7 @@ class GnomeAgentAgent(PrometheusAgent):
         # 3. Do your actual work here.  Replace this with real logic.
         # ------------------------------------------------------------------
         if input_data['skill_id'] == 'markdown_to_csv':
-            markdown_text = await read_in_markdown(text_or_markdown=params.get('text_path'))
+            markdown_text = await read_in_markdown(text_or_markdown=params.get('path_or_markdown'))
             dict_of_tables = markdown_to_csv(markdown_text=markdown_text)
             return await send_to_deeplynx(context=context,
                                           event_queue=event_queue,
@@ -131,20 +131,20 @@ class GnomeAgentAgent(PrometheusAgent):
         # ------------------------------------------------------------------
         return result
 
-    def read_in_markdown(self, text_or_markdown=None):
+    def read_in_markdown(self, path_or_markdown=None):
         """
         Read in the markdown file
 
         Args: 
-            text_or_markdown (str) : string containing either the path to the markdown file or the markdown file itself
+            path_or_markdown (str) : string containing either the path to the markdown file or the markdown file itself
 
         Returns:
             markdown_text (str) : Return either the read in version of the path or the markdown file presented
         """
-        if os.path.isfile(text_or_markdown):
-            with open(text_or_markdown, "r") as f:
+        if os.path.isfile(path_or_markdown):
+            with open(path_or_markdown, "r") as f:
                 return f.read()
-        return text_or_markdown
+        return path_or_markdowntex
 
     def markdown_to_csv(self, markdown_text):
         """
