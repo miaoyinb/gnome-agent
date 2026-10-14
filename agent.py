@@ -117,7 +117,8 @@ class GnomeAgentAgent(PrometheusAgent):
         if input_data['skill_id'] == 'markdown_to_csv':
             return await markdown_to_csv(context=context,
                                          event_queue=event_queue,
-                                         message="Reading in markdown to create csv")
+                                         message="Reading in markdown to create csv",
+                                         text_path=params.get('test_path'))
         if input_data['skill_id'] == 'plot_csv':
             return await ...
         return {"status": "Error", "error": "unknown skill"}
@@ -133,18 +134,76 @@ class GnomeAgentAgent(PrometheusAgent):
         Find every markdown table in the text and pair each with its nearest "Table N." caption.
 
         Args:
-            markdown_text: Full contents of the markdown file.
+            text_path = path to markdown file
 
         Returns:
-            A list of dicts, one per table, each shaped like:
-            {
-                "caption": str,   # e.g. "Table 1. Quarterly Revenue" (empty if none found)
-                "csv": str,       # table contents as CSV text
-            }
+            a list of deeplynx ids (str), one per table
         """
+        with open(text_path, "r") as f:
+            text = f.read()
 
+        lines = markdown_text.splitlines()
+        # Find the instances where we start a markdown table
+        separator_re = re.compile(r"^\|?\s*:?-+:?\s*(\|\s*:?-+:?\s*)*\|?$")
+
+        # Find the instance where Table is mentioned as the first word
+        caption_re = re.compile(r"^\s*(Table\s+\d+\.?.*)$", re.IGNORECASE)
+
+        # 1. Locate contiguous blocks of lines that form tables
+        table_blocks = []  # list of (start_idx, end_idx_exclusive)
+        i = 0
+        while i < len(lines):
+            if lines[i].strip().startswith("|"):
+                start = i
+                while i < len(lines) and lines[i].strip().startswith("|"):
+                    i += 1
+                table_blocks.append((start, i))
+            else:
+                i += 1
+
+        # 2. For each table block, find caption + parse into a DataFrame
+        results = []
+        tab_num = 1
+        for start, end in table_blocks:
+            # Caption = nearest line above the table starting with "Table N."
+            caption = ""
+            for j in range(start - 1, -1, -1):
+                line = lines[j].strip()
+                if line.startswith("|"):
+                    break  # hit another table before finding a caption
+                match = caption_re.match(line)
+                if match:
+                    caption = match.group(1).strip()
+                    break
+
+            # Drop the markdown separator row (e.g. |---|---|), then strip leading/trailing pipes
+            table_lines = [
+                line.strip().strip("|")
+                for line in lines[start:end]
+                if not separator_re.match(line.strip())
+            ]
+            if not table_lines:
+                continue
+
+            table_text = "\n".join(table_lines)
+            df = pd.read_table(io.StringIO(table_text), sep=r"\s*\|\s*", engine="python")
+            df.columns = [c.strip() for c in df.columns]
+
+            # create a dictionary which contains the caption (as meta data) and csv file
+            #results.append({
+            #    "caption": caption,
+            #    "csv": df.to_csv(index=False),
+            #})
+
+            table_id = await self.send_json_artifact(
+                context, event_queue,
+                {"caption": caption, "columns": df.cols, "rows": df.rows},
+                name=f"table {tab_num}", catalog_artifact=True)
+            results.append(table_id)
+            tab_num+=1 
 
         return results
+
 
     # ----------------------------------------------------------------------
     # PATTERNS — uncomment and adapt as needed.
