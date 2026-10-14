@@ -97,6 +97,7 @@ class GnomeAgentAgent(PrometheusAgent):
         #    declared in agent_card.json's inputSchema.
         # ------------------------------------------------------------------
         input_data = params.get("input_data")
+
         if not input_data:
             return {"status": "error", "error": "input_data is required"}
         
@@ -143,6 +144,7 @@ class GnomeAgentAgent(PrometheusAgent):
             }
         """
 
+        results = ""
 
         return results
 
