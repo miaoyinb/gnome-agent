@@ -1,2 +1,5 @@
 # Local secrets
 .env
+__pycache__/
+tests/__pycache__/
+uv.lock
