@@ -155,9 +155,6 @@ class GnomeAgentAgent(PrometheusAgent):
         Returns:
             a list of deeplynx ids (str), one per table
         """
-        with open(text_path, "r") as f:
-            text = f.read()
-
         lines = markdown_text.splitlines()
         # Find the instances where we start a markdown table
         separator_re = re.compile(r"^\|?\s*:?-+:?\s*(\|\s*:?-+:?\s*)*\|?$")
