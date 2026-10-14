@@ -21,6 +21,7 @@ serving, and registry registration for you.
 """
 
 import logging
+import os
 from typing import Any
 import pandas as pd
 
@@ -29,6 +30,7 @@ import io
 import pandas as pd
 import matplotlib
 import csv
+from pathlib import Path
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -36,6 +38,7 @@ import matplotlib.pyplot as plt
 from prometheus_api import load_prompt  # noqa: F401 - used by the LLM pattern below
 from prometheus_api.agent import EventQueue, PrometheusAgent, RequestContext
 from prometheus_api.llm_client import LLMConfig
+from prometheus_api.storage_client.connection import ConnectionConfig
 
 # Read secrets and configuration from environment variables.
 # Never hard-code API keys or URLs here.
@@ -79,7 +82,6 @@ class GnomeAgentAgent(PrometheusAgent):
     #
     #     return JSONResponse({"artifact_id": request.path_params["artifact_id"]})
 
-
     async def _execute(
         self,
         params: dict[str, Any],
@@ -104,10 +106,10 @@ class GnomeAgentAgent(PrometheusAgent):
         # 1. Read inputs from params.  These keys must match the properties
         #    declared in agent_card.json's inputSchema.
         # ------------------------------------------------------------------
-        input_data = params.get("input_data")
+        # input_data = params.get("input_data")
 
-        if not input_data:
-            return {"status": "error", "error": "input_data is required"}
+        # if not input_data:
+        #     return {"status": "error", "error": "input_data is required"}
 
         # ------------------------------------------------------------------
         # 2. Send optional progress updates so the UI stays responsive.
@@ -123,15 +125,25 @@ class GnomeAgentAgent(PrometheusAgent):
         # ------------------------------------------------------------------
         # 3. Do your actual work here.  Replace this with real logic.
         # ------------------------------------------------------------------
-        if input_data['skill_id'] == 'markdown_to_csv':
-            markdown_text = await read_in_markdown(path_or_markdown=params.get('path_or_markdown'))
+        skill_id = str(params.get("skill_id") or "").strip()
+        if skill_id == "markdown_to_csv":
+            markdown_text = await read_in_markdown(
+                path_or_markdown=params.get("path_or_markdown")
+            )
             list_of_tuples = markdown_to_csv(markdown_text=markdown_text)
-            return await send_to_deeplynx(context=context,
-                                          event_queue=event_queue,
-                                          message="Reading in markdown to create csv",
-                                          dict_of_csv=list_of_tuples)
-        if input_data['skill_id'] == 'plot_csv':
-            return await ...
+            return await send_to_deeplynx(
+                context=context,
+                event_queue=event_queue,
+                message="Reading in markdown to create csv",
+                dict_of_csv=list_of_tuples,
+            )
+        if skill_id == "plot_table":
+            return await self.plot_table(
+                context=context,
+                event_queue=event_queue,
+                message="Plotting CSV table",
+                params=params,
+            )
         return {"status": "Error", "error": "unknown skill"}
 
         # ------------------------------------------------------------------
@@ -144,7 +156,7 @@ class GnomeAgentAgent(PrometheusAgent):
         """
         Read in the markdown file
 
-        Args: 
+        Args:
             path_or_markdown (str) : string containing either the path to the markdown file or the markdown file itself
 
         Returns:
@@ -213,7 +225,7 @@ class GnomeAgentAgent(PrometheusAgent):
                 io.StringIO(table_text), sep=r"\s*\|\s*", engine="python"
             )
             df.columns = [c.strip() for c in df.columns]
-            list_of_tuples.append((caption,  df))
+            list_of_tuples.append((caption, df))
         return list_of_tuples
 
     def send_to_deeplynx(self, context, event_queue, message, list_of_tuples):
@@ -245,12 +257,12 @@ class GnomeAgentAgent(PrometheusAgent):
             tab_num += 1
         return results
 
-    def plot_table(context, event_queue, message, text_path):
+    async def plot_table(self, context, event_queue, message, params):
         """
         Get the artefact and plot it as another artefact.  This is a placeholder for your actual plotting logic.
         """
-        path = self.get_artifact_file_path(
-            params["table_artifact_id"],
+        path = await self.get_artifact_file_path(
+            params.get("table_artifact_id"),
             context=context,
             artifacts=params.get("artifacts"),
         )
@@ -260,37 +272,42 @@ class GnomeAgentAgent(PrometheusAgent):
         # )
 
         # Placeholder: Use LLM to figure out which columns to plot
-        x_col_raw = params["x_column"]
+        x_col_raw = params.get("x_column")
         if not x_col_raw:
             return {"status": "error", "error": "x_column is required"}
-        y_col_raw = params["y_column"]
+        y_col_raw = params.get("y_column")
         if not y_col_raw:
             return {"status": "error", "error": "y_column is required"}
-        
-        # cfg = LLMConfig.from_env()   # profile from .env
-        # if cfg.proxy_url:            # only the platform proxy
-        #     cfg = cfg.with_api_key(os.getenv("LITELLM_MASTER_KEY"))
 
-        # async with self.llm_client(context, config=cfg) as llm:
-        #     r = await llm.small(
-        #         f"Which caption matches '{desc}'? {captions}")
-        # answer = r.text
+        # exact_x_col, exact_y_col = await self.get_exact_csv_headers(
+        #     file_path=path, x_col_raw=x_col_raw, y_col_raw=y_col_raw
+        # )
+        exact_x_col, exact_y_col = "time", "temperature"
 
         # For now, just plot the first two columns
-        png_name = plot_csv_xy(self, path, 0, 1, "plot_table.png")
+        png_name = await self.plot_csv_xy(
+            file_path=path,
+            x_col=exact_x_col,
+            y_col=exact_y_col,
+            png_file="plot_table.png",
+        )
 
-        ref = self.send_deeplynx_artifact(
+        png_name_path = Path(png_name)
+
+        # print(f"PNG name is {png_name}")
+
+        ref = await self.send_deeplynx_artifact(
             context=context,
             event_queue=event_queue,
-            file_path=png,
-            name=png_name,
+            file_path=png_name_path,
+            name=png_name_path.name,
             description="plot of csv",
             storage_config=ConnectionConfig.from_env(),
             mime_type="image/png",
         )
         return {"status": "success", "artifact_id": ref.artifact_id}
 
-    def plot_csv_xy(self,file_path, x_col=0, y_col=1, png_file="plot_table.png"):
+    async def plot_csv_xy(self, file_path, x_col=0, y_col=1, png_file="plot_table.png"):
         """
         Plot two columns of a CSV file and save the chart as a PNG.
         csv_file : path to the CSV file (first row must be a header)
@@ -331,6 +348,29 @@ class GnomeAgentAgent(PrometheusAgent):
         plt.close()
 
         return png_file
+
+    async def get_exact_csv_headers(self, file_path, x_col_raw, y_col_raw):
+
+        with open(file_path, newline="", encoding="utf-8-sig") as f:
+            reader = csv.reader(f)
+            header = [h.strip() for h in next(reader)]
+
+        prompt_x = f"here are all the existing columns in a csv file, {header}. Which one should be used for x: {x_col_raw}? only give me the best header name in your answer."
+        prompt_y = f"here are all the existing columns in a csv file, {header}. Which one should be used for y: {y_col_raw}? only give me the best header name in your answer."
+
+        cfg = LLMConfig.from_env()  # profile from .env
+        if cfg.proxy_url:  # only the platform proxy
+            cfg = cfg.with_api_key(os.getenv("LITELLM_MASTER_KEY"))
+
+        async with self.llm_client(context, config=cfg) as llm:
+            r = await llm.small(prompt_x)
+        exact_x_col = r.text
+
+        async with self.llm_client(context, config=cfg) as llm:
+            r = await llm.small(prompt_y)
+        exact_y_col = r.text
+
+        return exact_x_col, exact_y_col
 
     # ----------------------------------------------------------------------
     # PATTERNS — uncomment and adapt as needed.
