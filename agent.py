@@ -68,59 +68,22 @@ class GnomeAgentAgent(PrometheusAgent):
     #
     #     return JSONResponse({"artifact_id": request.path_params["artifact_id"]})
 
-    async def _execute(
-        self,
-        params: dict[str, Any],
-        context: RequestContext,
-        event_queue: EventQueue,
-    ) -> dict[str, Any]:
-        """Process one request.
+    async def _execute(self, params, context, event_queue):
+        if params["skill_id"] == "plot_table":
+            return await self.plot(params, context, event_queue)
+        return {"status": "error", "error": "unknown skill"}
 
-        Args:
-            params: Parameters from the caller's JSON payload, plus ``skill_id``
-                from the message metadata (the skill the orchestrator selected).
-            context: The A2A request context.  Use ``context.context_id`` as a
-                stable key for per-conversation state.
-            event_queue: Pass to the ``send_*`` helpers to emit progress updates
-                and artifacts.
+    def plot(params, context, event_queue):
+        path = await self.get_artifact_file_path(params["table_artifact_id"], context=context,artifacts=params.get("artifacts"))
 
-        Returns:
-            A plain ``dict``.  The base class wraps it as the final ``completed``
-            task status automatically — do not enqueue that event yourself.
-        """
-        # ------------------------------------------------------------------
-        # 1. Read inputs from params.  These keys must match the properties
-        #    declared in agent_card.json's inputSchema.
-        # ------------------------------------------------------------------
-        input_data = params.get("input_data")
-        if not input_data:
-            return {"status": "error", "error": "input_data is required"}
+        table_id = await self.send_json_artifact(context, event_queue, payload, name="table",catalog_artifact=True)
 
-        # ------------------------------------------------------------------
-        # 2. Send optional progress updates so the UI stays responsive.
-        #    The base class sends the initial "working" update automatically;
-        #    call this only when you want intermediate messages.
-        # ------------------------------------------------------------------
-        await self.send_status_update(
-            context=context,
-            event_queue=event_queue,
-            message="Processing your request…",
-        )
-
-        # ------------------------------------------------------------------
-        # 3. Do your actual work here.  Replace this with real logic.
-        # ------------------------------------------------------------------
-        result = {
-            "status": "success",
-            "input_received": input_data,
-            "message": "Replace this with your agent's processing logic.",
-        }
-
-        # ------------------------------------------------------------------
-        # 4. Return a plain dict.  Keep keys consistent with the
-        #    "output_format" you described in agent_card.json.
-        # ------------------------------------------------------------------
-        return result
+        ref = await self.send_deeplynx_artifact(
+            context=context, event_queue=event_queue,
+            file_path=png, name="plot.png", description="…",
+            storage_config=ConnectionConfig.from_env(),
+            mime_type="image/png")
+        return {"status": "success", "artifact_id": ref.artifact_id}
 
     # ----------------------------------------------------------------------
     # PATTERNS — uncomment and adapt as needed.

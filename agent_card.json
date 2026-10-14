@@ -7,24 +7,18 @@
     "pushNotifications": false
   },
   "skills": [
-    {
-      "id": "fix-this-later",
-      "name": "Fix this later",
-      "description": "Performs analysis using gnome agent",
-      "usage_notes": "When to use this skill vs. other available skills.",
-      "requires_approval": false,
-      "expected_duration_seconds": 30,
-      "output_format": "JSON with keys: status, input_received, message",
-      "inputSchema": {
-        "type": "object",
-        "properties": {
-          "input_data": {
-            "type": "string",
-            "description": "The main input data to process."
-          }
-        },
-        "required": ["input_data"]
-      }
-    }
+{ "id": "plot_table",
+  "description": "Plot columns of a table artifact or an
+     uploaded CSV as a PNG. If no columns are named, the
+     skill asks, offering the real names.",
+  "usage_notes": "Use for plot/chart/graph requests.",
+  "inputSchema": { "type": "object",
+    "properties": {
+      "table_artifact_id": { "type": "string",
+        "x_artifact_ref": "single",
+        "description": "Table artifact or CSV file." },
+      "x_column": { "type": "string",
+        "description": "x axis column (approximate ok)" } },
+    "required": ["table_artifact_id"] } }
   ]
 }
