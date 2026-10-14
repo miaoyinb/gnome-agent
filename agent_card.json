@@ -20,10 +20,10 @@
         "properties": {
           "input_data": {
             "type": "string",
-            "description": "path to csv file."
+            "description": "Path to csv file or markdown file."
           }
         },
-        "required": ["markdown_path"]
+        "required": ["path_or_markdown"]
       }
     }
   ]
