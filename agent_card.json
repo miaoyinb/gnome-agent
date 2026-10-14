@@ -24,7 +24,6 @@
           }
         },
         "required": ["path_or_markdown"]
-<<<<<<< HEAD
       }
     },
     {
@@ -44,8 +43,6 @@
             }
           },
       "required": ["table_artifact_id"]
-=======
->>>>>>> a10cb2a (Update of agent card)
       }
     }
   ]
