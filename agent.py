@@ -229,9 +229,16 @@ class GnomeAgentAgent(PrometheusAgent):
         for caption, df in dict_of_tables.items():
             rows = df.values.tolist()
 
+<<<<<<< HEAD
+            # Create a DeepLynx artifact which contains the
+            table_id = await self.send_json_artifact(
+                context,
+                event_queue,
+=======
             # Create a DeepLynx artifact which contains the 
             table_id = self.send_json_artifact(
                 context, event_queue,
+>>>>>>> 85b3713 (Update of agent.py to fix minor bugs)
                 {"caption": caption, "columns": df.columns, "rows": rows},
                 name=f"table {tab_num}",
                 catalog_artifact=True,
