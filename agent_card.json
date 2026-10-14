@@ -30,7 +30,7 @@
       "id": "plot_table",
       "name": "Plot Table"
       "description": "Plot columns of a table artifact or an uploaded CSV as a PNG. If no columns are named, the skill asks, offering the real names.",
-      "usage_notes": "Use for plot/chart/graph requests.",
+      "usage_notes": "Use for plotting (x, y) data.",
       "inputSchema": {
         "type": "object",
         "properties": {
