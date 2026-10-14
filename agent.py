@@ -159,7 +159,7 @@ class GnomeAgentAgent(PrometheusAgent):
             markdown_text (str) : markdown text as a
 
         Returns:
-            a list of deeplynx ids (str), one per table
+            list_of_tuples (list) : a list of tuples; each tuple has a caption (str) and dataframe (df)
         """
         lines = markdown_text.splitlines()
         # Find the instances where we start a markdown table
@@ -181,7 +181,7 @@ class GnomeAgentAgent(PrometheusAgent):
                 i += 1
 
         # 2. For each table block, find caption + parse into a DataFrame
-        dict_of_tables = {}
+        list_of_tuples = []
         tab_num = 1
         for start, end in table_blocks:
             # Caption = nearest line above the table starting with "Table N."
@@ -209,8 +209,8 @@ class GnomeAgentAgent(PrometheusAgent):
                 io.StringIO(table_text), sep=r"\s*\|\s*", engine="python"
             )
             df.columns = [c.strip() for c in df.columns]
-            dict_of_tables.update({"caption": caption, "dataframe": df})
-        return dict_of_tables
+            list_of_tuples.append((caption,  df))
+        return list_of_tuples
 
     def send_to_deeplynx(self, context, event_queue, message, dict_of_tables):
         """
