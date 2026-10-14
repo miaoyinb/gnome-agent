@@ -225,9 +225,10 @@ class GnomeAgentAgent(PrometheusAgent):
         for caption, df in list_of_tuples:
             rows = df.values.tolist()
 
-            # Create a DeepLynx artifact which contains the 
+            # Create a DeepLynx artifact which contains the
             table_id = self.send_json_artifact(
-                context, event_queue,
+                context,
+                event_queue,
                 {"caption": caption, "columns": df.columns, "rows": rows},
                 name=f"table {tab_num}",
                 catalog_artifact=True,
@@ -240,17 +241,17 @@ class GnomeAgentAgent(PrometheusAgent):
         """
         Get the artefact and plot it as another artefact.  This is a placeholder for your actual plotting logic.
         """
-        path = await self.get_artifact_file_path(
+        path = self.get_artifact_file_path(
             params["table_artifact_id"],
             context=context,
             artifacts=params.get("artifacts"),
         )
 
-        table_id = await self.send_json_artifact(
+        table_id = self.send_json_artifact(
             context, event_queue, payload, name="table", catalog_artifact=True
         )
 
-        ref = await self.send_deeplynx_artifact(
+        ref = self.send_deeplynx_artifact(
             context=context,
             event_queue=event_queue,
             file_path=png,
