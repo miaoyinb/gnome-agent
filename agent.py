@@ -99,7 +99,7 @@ class GnomeAgentAgent(PrometheusAgent):
         input_data = params.get("input_data")
         if not input_data:
             return {"status": "error", "error": "input_data is required"}
-        
+
         # ------------------------------------------------------------------
         # 2. Send optional progress updates so the UI stays responsive.
         #    The base class sends the initial "working" update automatically;
@@ -114,24 +114,28 @@ class GnomeAgentAgent(PrometheusAgent):
         # ------------------------------------------------------------------
         # 3. Do your actual work here.  Replace this with real logic.
         # ------------------------------------------------------------------
-        if input_data['skill_id'] == 'markdown_to_csv':
-            markdown_text = await read_in_markdown(text_or_markdown=params.get('text_path'))
+        if input_data["skill_id"] == "markdown_to_csv":
+            markdown_text = await read_in_markdown(
+                text_or_markdown=params.get("text_path")
+            )
             dict_of_tables = markdown_to_csv(markdown_text=markdown_text)
-            return await send_to_deeplynx(context=context,
-                                          event_queue=event_queue,
-                                          message="Reading in markdown to create csv",
-                                          dict_of_csv=dict_of_tables)
-        if input_data['skill_id'] == 'plot_table':
-            return await plot_table(context=context,
-                                    event_queue=event_queue,
-                                    message="Plotting a table")
+            return await send_to_deeplynx(
+                context=context,
+                event_queue=event_queue,
+                message="Reading in markdown to create csv",
+                dict_of_csv=dict_of_tables,
+            )
+        if input_data["skill_id"] == "plot_table":
+            return await plot_table(
+                context=context, event_queue=event_queue, message="Plotting a table"
+            )
         return {"status": "Error", "error": "unknown skill"}
 
     def read_in_markdown(self, text_or_markdown=None):
         """
         Read in the markdown file
 
-        Args: 
+        Args:
             text_or_markdown (str) : string containing either the path to the markdown file or the markdown file itself
 
         Returns:
@@ -156,7 +160,6 @@ class GnomeAgentAgent(PrometheusAgent):
         # Find the instances where we start a markdown table
         separator_re = re.compile(r"^\|?\s*:?-+:?\s*(\|\s*:?-+:?\s*)*\|?$")
 
-<<<<<<< HEAD
         # Find the instance where Table is mentioned as the first word
         caption_re = re.compile(r"^\s*(Table\s+\d+\.?.*)$", re.IGNORECASE)
 
@@ -197,9 +200,11 @@ class GnomeAgentAgent(PrometheusAgent):
                 continue
 
             table_text = "\n".join(table_lines)
-            df = pd.read_table(io.StringIO(table_text), sep=r"\s*\|\s*", engine="python")
+            df = pd.read_table(
+                io.StringIO(table_text), sep=r"\s*\|\s*", engine="python"
+            )
             df.columns = [c.strip() for c in df.columns]
-            dict_of_tables.update({'caption': caption, 'dataframe': df})
+            dict_of_tables.update({"caption": caption, "dataframe": df})
         return dict_of_tables
 
     def send_to_deeplynx(self, context, event_queue, message, self, dict_of_tables):
@@ -219,26 +224,42 @@ class GnomeAgentAgent(PrometheusAgent):
         for caption, df in dict_of_tables.items():
             rows = df.values.tolist()
 
-            # Create a DeepLynx artifact which contains the 
+            # Create a DeepLynx artifact which contains the
             table_id = await self.send_json_artifact(
-                context, event_queue,
+                context,
+                event_queue,
                 {"caption": caption, "columns": df.columns, "rows": rows},
-                name=f"table {tab_num}", catalog_artifact=True)
+                name=f"table {tab_num}",
+                catalog_artifact=True,
+            )
             results.append(table_id)
-            tab_num+=1 
+            tab_num += 1
         return results
-=======
+
     def plot_table(context, event_queue, message, text_path):
         """
         Get the artefact and plot it as another artefact.  This is a placeholder for your actual plotting logic.
         """
-        path = await self.get_artifact_file_path(params["table_artifact_id"], context=context,artifacts=params.get("artifacts"))
+        path = await self.get_artifact_file_path(
+            params["table_artifact_id"],
+            context=context,
+            artifacts=params.get("artifacts"),
+        )
 
-        table_id = await self.send_json_artifact(context, event_queue, payload, name="table",catalog_artifact=True)
+        table_id = await self.send_json_artifact(
+            context, event_queue, payload, name="table", catalog_artifact=True
+        )
 
-        ref = await self.send_deeplynx_artifact(context=context, event_queue=event_queue,file_path=png, name="plot.png", description="…",storage_config=ConnectionConfig.from_env(),mime_type="image/png")
+        ref = await self.send_deeplynx_artifact(
+            context=context,
+            event_queue=event_queue,
+            file_path=png,
+            name="plot.png",
+            description="…",
+            storage_config=ConnectionConfig.from_env(),
+            mime_type="image/png",
+        )
         return {"status": "success", "artifact_id": ref.artifact_id}
->>>>>>> a1babc3 (add a placehodler function for plot table)
 
     # ----------------------------------------------------------------------
     # PATTERNS — uncomment and adapt as needed.
