@@ -132,20 +132,26 @@ class GnomeAgentAgent(PrometheusAgent):
             )
         return {"status": "Error", "error": "unknown skill"}
 
-    def read_in_markdown(self, text_or_markdown=None):
+        # ------------------------------------------------------------------
+        # 4. Return a plain dict.  Keep keys consistent with the
+        #    "output_format" you described in agent_card.json.
+        # ------------------------------------------------------------------
+        return result
+
+    def read_in_markdown(self, path_or_markdown=None):
         """
         Read in the markdown file
 
-        Args:
-            text_or_markdown (str) : string containing either the path to the markdown file or the markdown file itself
+        Args: 
+            path_or_markdown (str) : string containing either the path to the markdown file or the markdown file itself
 
         Returns:
             markdown_text (str) : Return either the read in version of the path or the markdown file presented
         """
-        if os.path.isfile(text_or_markdown):
-            with open(text_or_markdown, "r") as f:
+        if os.path.isfile(path_or_markdown):
+            with open(path_or_markdown, "r") as f:
                 return f.read()
-        return text_or_markdown
+        return path_or_markdowntex
 
     def markdown_to_csv(self, markdown_text):
         """
