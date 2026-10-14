@@ -115,10 +115,11 @@ class GnomeAgentAgent(PrometheusAgent):
         # 3. Do your actual work here.  Replace this with real logic.
         # ------------------------------------------------------------------
         if input_data['skill_id'] == 'markdown_to_csv':
+            markdown_text = await read_in_markdown(params.get('text_path'))
             return await markdown_to_csv(context=context,
                                          event_queue=event_queue,
                                          message="Reading in markdown to create csv",
-                                         text_path=params.get('test_path'))
+                                         markdown_text=markdown_text)
         if input_data['skill_id'] == 'plot_csv':
             return await ...
         return {"status": "Error", "error": "unknown skill"}
@@ -129,12 +130,27 @@ class GnomeAgentAgent(PrometheusAgent):
         # ------------------------------------------------------------------
         return result
 
-    def markdown_to_csv(context, event_queue, message, text_path):
+    def read_in_markdown(text_or_markdown=None):
+        """
+        Read in the markdown file
+
+        Args: 
+            text_or_markdown (str) : string containing either the path to the markdown file or the markdown file itself
+
+        Returns:
+            markdown_text (str) : Return either the read in version of the path or the markdown file presented
+        """
+        if os.path.isfile(text_or_markdown):
+            with open(text_or_markdown, "r") as f:
+                return f.read()
+        return text_or_markdown
+
+    def markdown_to_csv(context, event_queue, message, markdown_text):
         """
         Find every markdown table in the text and pair each with its nearest "Table N." caption.
 
         Args:
-            text_path = path to markdown file
+            markdown_text (str) : markdown text as a
 
         Returns:
             a list of deeplynx ids (str), one per table
@@ -188,16 +204,13 @@ class GnomeAgentAgent(PrometheusAgent):
             table_text = "\n".join(table_lines)
             df = pd.read_table(io.StringIO(table_text), sep=r"\s*\|\s*", engine="python")
             df.columns = [c.strip() for c in df.columns]
+            rows = df.values.tolist()
 
-            # create a dictionary which contains the caption (as meta data) and csv file
-            #results.append({
-            #    "caption": caption,
-            #    "csv": df.to_csv(index=False),
-            #})
 
+            # Create a DeepLynx artifact which contains the 
             table_id = await self.send_json_artifact(
                 context, event_queue,
-                {"caption": caption, "columns": df.cols, "rows": df.rows},
+                {"caption": caption, "columns": df.columns, "rows": rows},
                 name=f"table {tab_num}", catalog_artifact=True)
             results.append(table_id)
             tab_num+=1 
