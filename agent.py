@@ -117,17 +117,13 @@ class GnomeAgentAgent(PrometheusAgent):
         # ------------------------------------------------------------------
         if input_data['skill_id'] == 'markdown_to_csv':
             markdown_text = await read_in_markdown(path_or_markdown=params.get('path_or_markdown'))
-            dict_of_tables = markdown_to_csv(markdown_text=markdown_text)
-            return await send_to_deeplynx(
-                context=context,
-                event_queue=event_queue,
-                message="Reading in markdown to create csv",
-                dict_of_csv=dict_of_tables,
-            )
-        if input_data["skill_id"] == "plot_table":
-            return await plot_table(
-                context=context, event_queue=event_queue, message="Plotting a table"
-            )
+            list_of_tuples = markdown_to_csv(markdown_text=markdown_text)
+            return await send_to_deeplynx(context=context,
+                                          event_queue=event_queue,
+                                          message="Reading in markdown to create csv",
+                                          dict_of_csv=list_of_tuples)
+        if input_data['skill_id'] == 'plot_csv':
+            return await ...
         return {"status": "Error", "error": "unknown skill"}
 
         # ------------------------------------------------------------------
@@ -229,16 +225,9 @@ class GnomeAgentAgent(PrometheusAgent):
         for caption, df in dict_of_tables.items():
             rows = df.values.tolist()
 
-<<<<<<< HEAD
-            # Create a DeepLynx artifact which contains the
-            table_id = await self.send_json_artifact(
-                context,
-                event_queue,
-=======
             # Create a DeepLynx artifact which contains the 
             table_id = self.send_json_artifact(
                 context, event_queue,
->>>>>>> 85b3713 (Update of agent.py to fix minor bugs)
                 {"caption": caption, "columns": df.columns, "rows": rows},
                 name=f"table {tab_num}",
                 catalog_artifact=True,
