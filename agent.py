@@ -253,18 +253,18 @@ class GnomeAgentAgent(PrometheusAgent):
             artifacts=params.get("artifacts"),
         )
 
-        table_id = self.send_json_artifact(
-            context, event_queue, payload, name="table", catalog_artifact=True
-        )
+        # table_id = await self.send_json_artifact(
+        #     context, event_queue, payload, name="table", catalog_artifact=True
+        # )
 
-        plot_csv(path, 0, 1, "plot_table.png")
+        png_name = plot_csv(path, 0, 1, "plot_table.png")
 
         ref = self.send_deeplynx_artifact(
             context=context,
             event_queue=event_queue,
             file_path=png,
-            name="plot_table.png",
-            description="…",
+            name=png_name,
+            description="plot of csv",
             storage_config=ConnectionConfig.from_env(),
             mime_type="image/png",
         )
