@@ -68,13 +68,25 @@ async def test_markdown_to_csv(context, event_queue):
     assert result[2][0] == "Table 3. Vital statistics of the dragons resident in the Hollowmere caves, taken from the Spring 2024 Draconic Register, including each dragon's age, wingspan, measured top speed, and declared favourite snack."
 
 
-async def test_plot_table(context, event_queue):
-    # Load the csv data
+async def test_plot_table_index(context, event_queue):
+    # Load the csv data based on column indices
     # Specify the path to your csv file
     file_path = "tests/data/test.csv"
+    output_file = "plot_table.png"
 
     agent = _make_agent()
-    result = agent.plot_csv(fiile_path,0,1,"plot_table.png")
+    result = agent.plot_csv_xy(file_path=file_path, png_file=output_file)
+
+    print(result)
+
+async def test_plot_table_exact_name(context, event_queue):
+    # Load the csv data based on column indices
+    # Specify the path to your csv file
+    file_path = "tests/data/test.csv"
+    output_file = "plot_table_2.png"
+
+    agent = _make_agent()
+    result = agent.plot_csv_xy(file_path=file_path, x_col="time", y_col="flow", png_file=output_file)
 
     print(result)
 

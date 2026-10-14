@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "Fix this later"
 requires-python = ">=3.12"
 dependencies = [
+    "matplotlib>=3.11.2",
     # List only packages YOUR agent code imports directly.
     #
     # prometheus_api (and a2a, starlette, uvicorn) are already installed in the

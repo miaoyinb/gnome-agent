@@ -27,9 +27,15 @@ import pandas as pd
 import re
 import io
 import pandas as pd
+import matplotlib
+import csv
+
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
 
 from prometheus_api import load_prompt  # noqa: F401 - used by the LLM pattern below
 from prometheus_api.agent import EventQueue, PrometheusAgent, RequestContext
+from prometheus_api.llm_client import LLMConfig
 
 # Read secrets and configuration from environment variables.
 # Never hard-code API keys or URLs here.
@@ -249,20 +255,82 @@ class GnomeAgentAgent(PrometheusAgent):
             artifacts=params.get("artifacts"),
         )
 
-        table_id = self.send_json_artifact(
-            context, event_queue, payload, name="table", catalog_artifact=True
-        )
+        # table_id = await self.send_json_artifact(
+        #     context, event_queue, payload, name="table", catalog_artifact=True
+        # )
+
+        # Placeholder: Use LLM to figure out which columns to plot
+        x_col_raw = params["x_column"]
+        if not x_col_raw:
+            return {"status": "error", "error": "x_column is required"}
+        y_col_raw = params["y_column"]
+        if not y_col_raw:
+            return {"status": "error", "error": "y_column is required"}
+        
+        # cfg = LLMConfig.from_env()   # profile from .env
+        # if cfg.proxy_url:            # only the platform proxy
+        #     cfg = cfg.with_api_key(os.getenv("LITELLM_MASTER_KEY"))
+
+        # async with self.llm_client(context, config=cfg) as llm:
+        #     r = await llm.small(
+        #         f"Which caption matches '{desc}'? {captions}")
+        # answer = r.text
+
+        # For now, just plot the first two columns
+        png_name = plot_csv_xy(self, path, 0, 1, "plot_table.png")
 
         ref = self.send_deeplynx_artifact(
             context=context,
             event_queue=event_queue,
             file_path=png,
-            name="plot.png",
-            description="…",
+            name=png_name,
+            description="plot of csv",
             storage_config=ConnectionConfig.from_env(),
             mime_type="image/png",
         )
         return {"status": "success", "artifact_id": ref.artifact_id}
+
+    def plot_csv_xy(self,file_path, x_col=0, y_col=1, png_file="plot_table.png"):
+        """
+        Plot two columns of a CSV file and save the chart as a PNG.
+        csv_file : path to the CSV file (first row must be a header)
+        x_col    : x column, as a header name (str) or zero-based index (int)
+        y_col    : y column, as a header name (str) or zero-based index (int)
+        png_file : output PNG file name
+        Returns  : the PNG file name
+        """
+
+        x, y = [], []
+
+        # Read the CSV ("utf-8-sig" strips the BOM that Excel sometimes adds)
+        with open(file_path, newline="", encoding="utf-8-sig") as f:
+            reader = csv.reader(f)
+            header = [h.strip() for h in next(reader)]
+
+            # Convert column names to indices; integers are used as-is
+            xi = header.index(x_col) if isinstance(x_col, str) else x_col
+            yi = header.index(y_col) if isinstance(y_col, str) else y_col
+
+            # Collect numeric values, skipping blank or invalid rows
+            for row in reader:
+                try:
+                    x.append(float(row[xi]))
+                    y.append(float(row[yi]))
+                except (ValueError, IndexError):
+                    continue
+
+        # Plot the data and label the axes with the column headers
+        plt.plot(x, y)
+        plt.xlabel(header[xi])
+        plt.ylabel(header[yi])
+        plt.title(f"{header[yi]} vs {header[xi]}")
+        plt.grid(True)
+
+        # Save to PNG, then close the figure to free memory
+        plt.savefig(png_file, dpi=150, bbox_inches="tight")
+        plt.close()
+
+        return png_file
 
     # ----------------------------------------------------------------------
     # PATTERNS — uncomment and adapt as needed.
